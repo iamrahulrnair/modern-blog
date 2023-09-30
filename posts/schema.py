@@ -1,5 +1,8 @@
 import graphene
+from django.contrib.auth import get_user_model
 from graphene_django import DjangoObjectType, DjangoListField
+
+from utils.decorators import authorize
 from .models import Post, PostLikes, PostComment
 
 
@@ -37,8 +40,9 @@ class PostCreate(graphene.Mutation):
     post = graphene.Field(PostType)
 
     @classmethod
-    def mutate(cls, root, info, title, content):
-        user = "sample"
+    @authorize
+    def mutate(cls, root, info, title, content, *args, **kwargs):
+        user = kwargs.get('user')
         post = Post.objects.create_post(title, content, user=user)
         return cls(post=post)
 
@@ -52,8 +56,11 @@ class PostUpdate(graphene.Mutation):
     post = graphene.Field(PostType)
 
     @classmethod
-    def mutate(cls, root, info, slug, title, content):
-        user = "sample"
+    def mutate(cls, root, info, **kwargs):
+        title = kwargs.get('title')
+        content = kwargs.get('content')
+        slug = kwargs.get('slug')
+        user = get_user_model().objects.all().first()
         post = Post.objects.update_post(title, content, slug, user=user)
         return cls(post=post)
 
@@ -66,7 +73,7 @@ class PostDelete(graphene.Mutation):
 
     @classmethod
     def mutate(cls, root, info, slug):
-        user = "sample"
+        user = get_user_model().objects.all().first()
         post = Post.objects.delete_post(slug, user)
         return cls(post=post)
 

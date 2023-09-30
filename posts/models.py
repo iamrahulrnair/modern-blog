@@ -10,19 +10,24 @@ from django.db.models.signals import post_save
 
 class PostManager(models.Manager):
     def create_post(self, title, content, user):
-        post = self.create(title, content, user)
+        post = self.create(title=title, content=content, user=user)
         post.save()
         return post
 
     def update_post(self, title, content, slug, user):
         post = self.get(slug=slug, user=user)
-        post.title = title
-        post.content = content
-        post.save(update_fields=['title', 'content'])
+        fields = ['updatedAt', 'slug']
+        if title:
+            fields.append('title')
+            post.title = title
+        if content:
+            fields.append('content')
+            post.content = content
+        post.save(update_fields=fields)
         return post
 
     def delete_post(self, slug, user):
-        post = self.get(slug, user=user)
+        post = self.get(slug=slug, user=user)
         post.delete()
         return post
 
@@ -38,7 +43,7 @@ class Post(Timestamps, models.Model):
     time_to_read = models.IntegerField(null=True, blank=True)
     slug = models.SlugField(default="", null=False, db_index=True, unique=True)
 
-    objects = PostManager
+    objects = PostManager()
 
     def save(self, *args, **kwargs):
         """
